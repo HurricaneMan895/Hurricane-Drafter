@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Hurricane Drafter &mdash; Build Your Atlantic Season</title>
+<meta name="description" content="Pull hurricane cards, draft a 14-storm Atlantic season, then watch every track replay on satellite and see how your season stacks up against the real record.">
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <div class="brand"><span class="brand-mark"></span>HURRICANE DRAFTER</div>
+    <div class="topnav-links">
+      <a class="topnav-link" href="https://tropicalcyclonedatabase.com/" target="_blank" rel="noopener">Tropical Cyclone Database</a>
+      <button class="topnav-link ghost" id="btnRestart" hidden>Restart</button>
+    </div>
+  </div>
+</nav>
+
+<main id="app">
+
+  <!-- ─────────────────────────── HOME ─────────────────────────── -->
+  <section class="screen is-active" id="screen-home">
+    <div class="home-wrap">
+      <div class="home-hero">
+        <p class="eyebrow">Atlantic basin &middot; 1851&ndash;2025</p>
+        <h1>Draft the greatest<br>hurricane season<br>never recorded.</h1>
+        <p class="lede">
+          Open fourteen packs. Every card is a real Atlantic tropical cyclone, rated
+          out of 99 on what it actually did &mdash; wind, pressure, ACE, longevity, toll.
+          Build the strongest fourteen-storm season you can, then watch every track
+          you drafted replay across the basin on satellite.
+        </p>
+
+        <div class="mode-pick" role="radiogroup" aria-label="Game mode">
+          <button class="mode-btn is-on" data-mode="draft" role="radio" aria-checked="true">
+            <span class="mode-name">Draft</span>
+            <span class="mode-desc">14 packs &middot; three cards each &middot; you keep one</span>
+          </button>
+          <button class="mode-btn" data-mode="pull" role="radio" aria-checked="false">
+            <span class="mode-name">Straight pulls</span>
+            <span class="mode-desc">14 packs &middot; one card each &middot; no takebacks</span>
+          </button>
+        </div>
+
+        <button class="cta" id="btnStart" disabled>Loading storms&hellip;</button>
+        <p class="hint" id="homeHint">Preparing the card pool.</p>
+      </div>
+
+      <div class="home-odds">
+        <h2 class="panel-title">Pack odds</h2>
+        <ul class="odds-list" id="oddsList"></ul>
+        <p class="odds-note">
+          Tier comes from each storm's overall rating. Ratings, stats and card art are
+          drawn from the Tropical Cyclone Database's HURDAT2-derived record;
+          the five-star tier is reserved for overalls of 96 and up &mdash;
+          <span id="legendaryCount">11</span> storms in all of Atlantic history.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── DRAFT ─────────────────────────── -->
+  <section class="screen" id="screen-draft">
+    <header class="draft-head">
+      <div class="draft-step">
+        <span class="step-label">Pack</span>
+        <span class="step-count"><b id="packNum">1</b><i>/ 14</i></span>
+      </div>
+      <div class="draft-progress"><div class="draft-progress-fill" id="packBar"></div></div>
+      <div class="draft-prompt" id="draftPrompt">Tap the pack to open</div>
+    </header>
+
+    <div class="stage" id="stage">
+      <button class="pack" id="pack" aria-label="Open pack">
+        <span class="pack-foil"></span>
+        <span class="pack-label">OPEN</span>
+      </button>
+      <div class="offer" id="offer" hidden></div>
+    </div>
+
+    <footer class="roster-bar">
+      <div class="roster-head">
+        <span class="roster-title">Your season</span>
+        <span class="roster-meta" id="rosterMeta">0 / 14 &middot; ACE 0.0</span>
+      </div>
+      <ol class="roster" id="roster"></ol>
+    </footer>
+  </section>
+
+  <!-- ─────────────────────────── MAP ─────────────────────────── -->
+  <section class="screen" id="screen-map">
+    <div id="map"></div>
+
+    <div class="map-hud" id="mapHud">
+      <div class="hud-index" id="hudIndex">Storm 1 of 14</div>
+      <div class="hud-name" id="hudName">&mdash;</div>
+      <div class="hud-sub" id="hudSub">&mdash;</div>
+      <div class="hud-live" id="hudLive"></div>
+    </div>
+
+    <aside class="map-list" id="mapList"></aside>
+
+    <div class="map-controls">
+      <button class="ctrl" id="btnPlay" aria-label="Pause">Pause</button>
+      <button class="ctrl" id="btnSpeed">1&times;</button>
+      <button class="ctrl" id="btnSkip">Skip storm</button>
+      <button class="ctrl primary" id="btnFinish">Season totals</button>
+    </div>
+
+    <div class="map-legend">
+      <span><i style="background:#5ad2f4"></i>TD</span>
+      <span><i style="background:#3fd0c9"></i>TS</span>
+      <span><i style="background:#f2c14e"></i>1</span>
+      <span><i style="background:#f0983b"></i>2</span>
+      <span><i style="background:#e6602f"></i>3</span>
+      <span><i style="background:#cf2b3e"></i>4</span>
+      <span><i style="background:#a63aa8"></i>5</span>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── SEASON ─────────────────────────── -->
+  <section class="screen" id="screen-season">
+    <div class="season-wrap">
+      <header class="season-head">
+        <p class="eyebrow">Final report</p>
+        <h1 id="seasonTitle">Your season</h1>
+        <div class="grade-row">
+          <div class="grade" id="grade">&mdash;</div>
+          <div class="grade-text">
+            <div class="grade-class" id="seasonClass">&mdash;</div>
+            <div class="grade-note" id="seasonNote">&mdash;</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="stat-grid" id="statGrid"></div>
+
+      <section class="season-block">
+        <h2 class="panel-title">Against the real record</h2>
+        <div class="rank-card" id="rankCard"></div>
+      </section>
+
+      <section class="season-block">
+        <h2 class="panel-title">Superlatives</h2>
+        <div class="super-grid" id="superGrid"></div>
+      </section>
+
+      <section class="season-block">
+        <h2 class="panel-title">The roster</h2>
+        <div class="season-cards" id="seasonCards"></div>
+      </section>
+
+      <div class="season-actions">
+        <button class="cta" id="btnAgain">Draft another season</button>
+        <button class="cta ghost" id="btnReplay">Replay the tracks</button>
+        <button class="cta ghost" id="btnCopy">Copy season summary</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="boot" id="boot"><div class="boot-spin"></div></div>
+
+<script src="assets/vendor/leaflet/leaflet.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
